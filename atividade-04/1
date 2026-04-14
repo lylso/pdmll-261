@@ -1,0 +1,47 @@
+// iot_device.dart
+import 'dart:io';
+import 'dart:math';
+import 'dart:async';
+
+void main() async {
+  print('🚀 IoT Device - Sensor de Temperatura iniciado...');
+  print('📡 Conectando ao servidor...');
+  
+  // Configuração do servidor
+  final serverHost = InternetAddress.loopbackIPv4;
+  final serverPort = 8080;
+  
+  while (true) {
+    try {
+      // Conecta ao servidor
+      final socket = await Socket.connect(serverHost, serverPort);
+      print('✅ Conectado ao servidor ${serverHost.address}:$serverPort');
+      
+      // Loop para enviar leituras a cada 10 segundos
+      Timer.periodic(Duration(seconds: 10), (timer) async {
+        try {
+          // Simula leitura do sensor (20-35°C)
+          final temperatura = 20 + Random().nextDouble() * 15;
+          final mensagem = 'TEMP:${temperatura.toStringAsFixed(2)}°C';
+          
+          // Envia a mensagem
+          socket.write('$mensagem\n');
+          print('📤 Enviado: $mensagem');
+          
+        } catch (e) {
+          print('❌ Erro ao enviar: $e');
+          timer.cancel();
+          socket.destroy();
+        }
+      });
+      
+      // Mantém a conexão ativa
+      await socket.done;
+      
+    } catch (e) {
+      print('❌ Falha na conexão: $e');
+      print('⏳ Tentando reconectar em 5 segundos...');
+      await Future.delayed(Duration(seconds: 5));
+    }
+  }
+}
